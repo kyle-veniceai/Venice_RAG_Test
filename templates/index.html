@@ -1,0 +1,252 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>RAG Chatbot</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        body {
+            background-color: #f5f5f5;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        .chat-container {
+            height: 60vh;
+            overflow-y: auto;
+            padding: 15px;
+            background-color: white;
+            border-radius: 10px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+        }
+        .message-container {
+            margin-bottom: 15px;
+            display: flex;
+        }
+        .user-message {
+            justify-content: flex-end;
+        }
+        .bot-message {
+            justify-content: flex-start;
+        }
+        .message-bubble {
+            padding: 10px 15px;
+            border-radius: 20px;
+            max-width: 70%;
+        }
+        .user-bubble {
+            background-color: #007bff;
+            color: white;
+        }
+        .bot-bubble {
+            background-color: #e9ecef;
+            color: #212529;
+        }
+        .upload-container {
+            background-color: white;
+            border-radius: 10px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+            padding: 20px;
+            margin-bottom: 20px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container mt-5">
+        <h1 class="text-center mb-4">RAG Chatbot</h1>
+        
+        <!-- Tabs -->
+        <ul class="nav nav-tabs mb-4" id="myTab" role="tablist">
+            <li class="nav-item" role="presentation">
+                <button class="nav-link active" id="chat-tab" data-bs-toggle="tab" data-bs-target="#chat" type="button" role="tab" aria-controls="chat" aria-selected="true">Chat</button>
+            </li>
+            <li class="nav-item" role="presentation">
+                <button class="nav-link" id="upload-tab" data-bs-toggle="tab" data-bs-target="#upload" type="button" role="tab" aria-controls="upload" aria-selected="false">Upload Documents</button>
+            </li>
+        </ul>
+        
+        <!-- Tab content -->
+        <div class="tab-content" id="myTabContent">
+            <!-- Chat tab -->
+            <div class="tab-pane fade show active" id="chat" role="tabpanel" aria-labelledby="chat-tab">
+                <div class="chat-container mb-3" id="chatMessages">
+                    <div class="message-container bot-message">
+                        <div class="message-bubble bot-bubble">
+                            Hello! I'm your RAG-powered chatbot. Ask me anything, and I'll try to answer based on my knowledge base.
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="input-group mb-3">
+                    <input type="text" class="form-control" id="userInput" placeholder="Type your message...">
+                    <button class="btn btn-primary" id="sendButton">Send</button>
+                </div>
+            </div>
+            
+            <!-- Upload tab -->
+            <div class="tab-pane fade" id="upload" role="tabpanel" aria-labelledby="upload-tab">
+                <div class="upload-container">
+                    <h3 class="mb-3">Upload Documents to Knowledge Base</h3>
+                    
+                    <form id="uploadForm">
+                        <div class="mb-3">
+                            <label for="documentFile" class="form-label">Select File</label>
+                            <input class="form-control" type="file" id="documentFile" name="file" accept=".txt,.csv,.json">
+                            <div class="form-text">Supported formats: .txt, .csv, .json</div>
+                        </div>
+                        
+                        <div class="mb-3 csv-options d-none">
+                            <label for="textColumn" class="form-label">Text Column Name (for CSV)</label>
+                            <input type="text" class="form-control" id="textColumn" name="text_column" placeholder="e.g., 'text' or 'content'">
+                            <div class="form-text">Column name containing the text to be processed. Leave blank to auto-detect.</div>
+                        </div>
+                        
+                        <div class="mb-3 json-options d-none">
+                            <label for="textKey" class="form-label">Text Key Name (for JSON)</label>
+                            <input type="text" class="form-control" id="textKey" name="text_key" placeholder="e.g., 'text' or 'content'">
+                            <div class="form-text">Key name containing the text to be processed. Leave blank to auto-detect.</div>
+                        </div>
+                        
+                        <button type="submit" class="btn btn-primary">Upload & Process</button>
+                    </form>
+                    
+                    <div class="alert mt-3 d-none" id="uploadStatus" role="alert"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const chatMessages = document.getElementById('chatMessages');
+            const userInput = document.getElementById('userInput');
+            const sendButton = document.getElementById('sendButton');
+            const uploadForm = document.getElementById('uploadForm');
+            const documentFile = document.getElementById('documentFile');
+            const csvOptions = document.querySelector('.csv-options');
+            const jsonOptions = document.querySelector('.json-options');
+            const uploadStatus = document.getElementById('uploadStatus');
+            
+            // Send chat message
+            function sendMessage() {
+                const message = userInput.value.trim();
+                if (!message) return;
+                
+                // Add user message to chat
+                addMessage(message, 'user');
+                userInput.value = '';
+                
+                // Show loading indicator
+                addMessage('Thinking...', 'bot', 'loading-message');
+                
+                // Send to backend
+                fetch('/chat', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ message: message })
+                })
+                .then(response => response.json())
+                .then(data => {
+                    // Remove loading message
+                    const loadingMessage = document.querySelector('.loading-message');
+                    if (loadingMessage) {
+                        loadingMessage.parentElement.remove();
+                    }
+                    
+                    // Add bot response
+                    addMessage(data.response, 'bot');
+                })
+                .catch(error => {
+                    // Remove loading message
+                    const loadingMessage = document.querySelector('.loading-message');
+                    if (loadingMessage) {
+                        loadingMessage.parentElement.remove();
+                    }
+                    
+                    // Add error message
+                    addMessage('Sorry, there was an error processing your request. Please try again.', 'bot');
+                    console.error('Error:', error);
+                });
+            }
+            
+            // Add message to chat
+            function addMessage(message, sender, className = '') {
+                const messageContainer = document.createElement('div');
+                messageContainer.className = `message-container ${sender}-message`;
+                
+                const messageBubble = document.createElement('div');
+                messageBubble.className = `message-bubble ${sender}-bubble ${className}`;
+                messageBubble.textContent = message;
+                
+                messageContainer.appendChild(messageBubble);
+                chatMessages.appendChild(messageContainer);
+                
+                // Scroll to bottom
+                chatMessages.scrollTop = chatMessages.scrollHeight;
+            }
+            
+            // Handle file type change
+            documentFile.addEventListener('change', function() {
+                const fileName = this.value.toLowerCase();
+                
+                // Hide all options first
+                csvOptions.classList.add('d-none');
+                jsonOptions.classList.add('d-none');
+                
+                // Show relevant options based on file type
+                if (fileName.endsWith('.csv')) {
+                    csvOptions.classList.remove('d-none');
+                } else if (fileName.endsWith('.json')) {
+                    jsonOptions.classList.remove('d-none');
+                }
+            });
+            
+            // Handle form submission
+            uploadForm.addEventListener('submit', function(event) {
+                event.preventDefault();
+                
+                const formData = new FormData(this);
+                
+                // Update status
+                uploadStatus.textContent = 'Uploading and processing file...';
+                uploadStatus.className = 'alert mt-3 alert-info';
+                uploadStatus.classList.remove('d-none');
+                
+                fetch('/upload', {
+                    method: 'POST',
+                    body: formData
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.error) {
+                        uploadStatus.textContent = 'Error: ' + data.error;
+                        uploadStatus.className = 'alert mt-3 alert-danger';
+                    } else {
+                        uploadStatus.textContent = data.message;
+                        uploadStatus.className = 'alert mt-3 alert-success';
+                        uploadForm.reset();
+                        csvOptions.classList.add('d-none');
+                        jsonOptions.classList.add('d-none');
+                    }
+                })
+                .catch(error => {
+                    uploadStatus.textContent = 'Error: ' + error.message;
+                    uploadStatus.className = 'alert mt-3 alert-danger';
+                    console.error('Error:', error);
+                });
+            });
+            
+            // Event listeners
+            sendButton.addEventListener('click', sendMessage);
+            
+            userInput.addEventListener('keypress', function(event) {
+                if (event.key === 'Enter') {
+                    sendMessage();
+                }
+            });
+        });
+    </script>
+</body>
+</html>

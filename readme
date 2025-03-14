@@ -1,0 +1,274 @@
+# RAG-Powered Chatbot
+
+This repository contains a simple implementation of a RAG (Retrieval-Augmented Generation) chatbot that can answer questions based on a knowledge base. The chatbot uses a custom embedding model for vectorizing text and Pinecone as a vector database for storing and retrieving knowledge.
+
+## Overview
+
+The chatbot follows this process:
+1. Documents are processed, chunked, and stored as vector embeddings in Pinecone
+2. When a user asks a question, it's converted to a vector embedding
+3. The system retrieves the most relevant content from the vector database
+4. The LLM (llama-3.3-70b via Venice.ai) uses the retrieved content (if available) to generate a response
+
+## Setup
+
+### Prerequisites
+
+- Python 3.8+
+- Pinecone account
+- Venice.ai API key
+- Access to your custom embedding model API
+
+### Installation
+
+1. Clone this repository
+```bash
+git clone https://github.com/yourusername/rag-chatbot.git
+cd rag-chatbot
+```
+
+2. Install dependencies
+```bash
+pip install -r requirements.txt
+```
+
+3. Create a `.env` file with your API keys
+```
+EMBEDDING_API_KEY=xxx
+PINECONE_API_KEY=your-pinecone-api-key
+PINECONE_ENVIRONMENT=your-pinecone-environment
+VENICE_API_KEY=your-venice-api-key
+```
+
+## Usage
+
+### Building the Knowledge Base
+
+You can add documents to the knowledge base using the knowledge_base_builder.py script:
+
+```bash
+# Process a single file
+python knowledge_base_builder.py --file path/to/your/document.txt
+
+# Process all files in a directory
+python knowledge_base_builder.py --dir path/to/your/documents --recursive
+
+# Process only specific file types
+python knowledge_base_builder.py --dir path/to/your/documents --types .txt .csv
+```
+
+For CSV files, you can specify which column contains the text:
+```bash
+python knowledge_base_builder.py --file data.csv --text-column content
+```
+
+For JSON files, you can specify which key contains the text:
+```bash
+python knowledge_base_builder.py --file data.json --text-key description
+```
+
+### Using the Command Line Interface
+
+You can interact with the chatbot using the CLI:
+
+```bash
+python rag_chatbot.py
+```
+
+This will start a simple chat interface where you can ask questions.
+
+### Using the Web Interface
+
+To run the web interface:
+
+```bash
+python web_interface.py
+```
+
+Then open your browser and navigate to http://localhost:5000
+
+The web interface allows you to:
+- Chat with the bot
+- Upload new documents to the knowledge base
+
+## File Structure
+
+- `rag_chatbot.py`: Core RAG chatbot implementation
+- `knowledge_base_builder.py`: Tools for processing and adding documents to the knowledge base
+- `web_interface.py`: Flask web application
+- `templates/index.html`: HTML template for the web interface
+- `uploads/`: Directory where uploaded files are stored
+
+## Customization
+
+### Adjusting Retrieval Parameters
+
+You can modify the following parameters in `rag_chatbot.py`:
+- `CHUNK_SIZE`: Size of text chunks (default: 500)
+- `CHUNK_OVERLAP`: Overlap between chunks (default: 50)
+- `TOP_K_RESULTS`: Number of similar documents to retrieve (default: 5)
+
+### Modifying the LLM Prompt
+
+You can customize how the context is presented to the LLM by editing the `query_llm` function in `rag_chatbot.py`.
+
+## Requirements
+
+```
+Flask==2.3.3
+pandas==2.1.0
+pinecone-client==2.2.2
+requests==2.31.0
+tqdm==4.66.1
+werkzeug==2.3.7
+```
+
+## Limitations
+
+- The current implementation is designed for demonstration purposes and may need optimization for production use.
+- Large files might cause memory issues, consider implementing streaming for larger datasets.
+- The embedding model and LLM are accessed via API calls, so internet connectivity is required.
+
+
+
+
+
+# RAG Chatbot Deployment Instructions
+
+This document provides instructions for building, deploying, and running the RAG Chatbot Docker container.
+
+## Prerequisites
+
+- Docker installed on your local machine or server
+- API keys for Pinecone, Venice.ai, and your embedding service
+- Basic understanding of Docker and container deployment
+
+## Local Development and Testing
+
+### 1. Set up environment variables
+
+Create a `.env` file based on the provided `.env.example`:
+
+```bash
+cp .env.example .env
+```
+
+Then edit the `.env` file with your actual API keys.
+
+### 2. Build and run using docker-compose
+
+```bash
+docker-compose up --build
+```
+
+This will build the Docker image and start the container with the environment variables from your `.env` file.
+
+### 3. Alternatively, use the build script
+
+```bash
+chmod +x build.sh
+export PINECONE_API_KEY=your_key
+export EMBEDDING_API_KEY=your_key
+export VENICE_API_KEY=your_key
+./build.sh
+```
+
+## Cloud Deployment Options
+
+### AWS Elastic Container Service (ECS)
+
+1. Push your Docker image to Amazon ECR:
+
+```bash
+aws ecr get-login-password --region <region> | docker login --username AWS --password-stdin <aws-account-id>.dkr.ecr.<region>.amazonaws.com
+docker tag ragchatbot:latest <aws-account-id>.dkr.ecr.<region>.amazonaws.com/ragchatbot:latest
+docker push <aws-account-id>.dkr.ecr.<region>.amazonaws.com/ragchatbot:latest
+```
+
+2. Create an ECS task definition with your container image and environment variables
+3. Create an ECS service to run your task
+
+### Google Cloud Run
+
+1. Push your Docker image to Google Container Registry:
+
+```bash
+gcloud auth configure-docker
+docker tag ragchatbot:latest gcr.io/<project-id>/ragchatbot:latest
+docker push gcr.io/<project-id>/ragchatbot:latest
+```
+
+2. Deploy to Cloud Run:
+
+```bash
+gcloud run deploy ragchatbot \
+  --image gcr.io/<project-id>/ragchatbot:latest \
+  --platform managed \
+  --set-env-vars "PINECONE_API_KEY=your_key,EMBEDDING_API_KEY=your_key,VENICE_API_KEY=your_key" \
+  --region <region> \
+  --allow-unauthenticated
+```
+
+### Microsoft Azure Container Instances
+
+1. Push your Docker image to Azure Container Registry:
+
+```bash
+az acr login --name <registry-name>
+docker tag ragchatbot:latest <registry-name>.azurecr.io/ragchatbot:latest
+docker push <registry-name>.azurecr.io/ragchatbot:latest
+```
+
+2. Create an Azure Container Instance:
+
+```bash
+az container create \
+  --resource-group <resource-group> \
+  --name ragchatbot \
+  --image <registry-name>.azurecr.io/ragchatbot:latest \
+  --dns-name-label ragchatbot \
+  --ports 8080 \
+  --environment-variables PINECONE_API_KEY=your_key EMBEDDING_API_KEY=your_key VENICE_API_KEY=your_key
+```
+
+## Configuration Options
+
+### Persistent Storage
+
+For production deployments, you should use a persistent storage solution for uploaded files:
+
+- **AWS ECS**: Use EFS volumes
+- **Google Cloud Run**: Mount a Cloud Storage bucket
+- **Azure**: Use Azure Files
+
+Update your container configuration to mount the appropriate storage volumes.
+
+### Security Considerations
+
+- Never commit your `.env` file to version control
+- Use secrets management services for production deployments:
+  - AWS: Secrets Manager or Parameter Store
+  - GCP: Secret Manager
+  - Azure: Key Vault
+
+### Health Checks
+
+The application includes a `/health` endpoint that returns a 200 status code when the service is healthy. Configure your container platform to use this endpoint for health checks.
+
+## Troubleshooting
+
+### Container Logs
+
+To view the container logs:
+
+```bash
+docker logs ragchatbot
+```
+
+### File Upload Issues
+
+If file uploads aren't working:
+
+1. Ensure the `/app/uploads` directory is writable in the container
+2. Check that your persistent storage is correctly mounted
+3. Verify file size limits in both Flask and your reverse proxy (if used)

@@ -1,0 +1,15 @@
+version: '3'
+
+services:
+  ragchatbot:
+    build: .
+    ports:
+      - "8080:8080"
+    environment:
+      - PORT=8080
+      - PINECONE_API_KEY=${PINECONE_API_KEY}
+      - EMBEDDING_API_KEY=${EMBEDDING_API_KEY}
+      - VENICE_API_KEY=${VENICE_API_KEY}
+    volumes:
+      - ./uploads:/app/uploads
+    restart: unless-stopped
