@@ -28,15 +28,13 @@ VENICE_API_KEY = get_env_variable("VENICE_API_KEY")
 VENICE_API_URL = get_env_variable("VENICE_API_URL")
 
 # Configuration variables with safe defaults
-VECTOR_DIMENSION = int(os.environ.get("VECTOR_DIMENSION", "1024"))
-CHUNK_SIZE = int(os.environ.get("CHUNK_SIZE", "256"))
-CHUNK_OVERLAP = int(os.environ.get("CHUNK_OVERLAP", "50"))
-TOP_K_RESULTS = int(os.environ.get("TOP_K_RESULTS", "5"))
-INDEX_NAME = os.environ.get("INDEX_NAME", "ragtest2")
-
-# Additional configurations
+VECTOR_DIMENSION = get_env_variable("VECTOR_DIMENSION")
+CHUNK_SIZE = get_env_variable("CHUNK_SIZE")
+CHUNK_OVERLAP = get_env_variable("CHUNK_OVERLAP")
+TOP_K_RESULTS = get_env_variable("TOP_K_RESULTS")
+INDEX_NAME = get_env_variable("INDEX_NAME")
+metric = get_env_variable("METRIC")
 dimensions = VECTOR_DIMENSION
-metric = "cosine"
 index_name = INDEX_NAME
 
 # Initialize Pinecone
