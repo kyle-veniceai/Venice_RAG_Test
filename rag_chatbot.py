@@ -8,34 +8,25 @@ from pinecone import ServerlessSpec
 import time
 from dotenv import load_dotenv
 
-# Load environment variables
+# Load envs
 load_dotenv()
 
-def get_env_variable(var_name):
-    """
-    Get an environment variable or raise an error if not found.
-    """
-    value = os.environ.get(var_name)
-    if value is None:
-        raise EnvironmentError(f"Environment variable {var_name} not set")
-    return value
-
-# Required environment variables for API keys and URLs (no fallbacks for security)
-EMBEDDING_API_KEY = get_env_variable("EMBEDDING_API_KEY")
-EMBEDDING_API_URL = get_env_variable("EMBEDDING_API_URL")
-PINECONE_API_KEY = get_env_variable("PINECONE_API_KEY")
-VENICE_API_KEY = get_env_variable("VENICE_API_KEY")
-VENICE_API_URL = get_env_variable("VENICE_API_URL")
+EMBEDDING_API_KEY = os.getenv("EMBEDDING_API_KEY")
+EMBEDDING_API_URL = os.getenv("EMBEDDING_API_URL")
+PINECONE_API_KEY = os.getenv("PINECONE_API_KEY")
+VENICE_API_KEY = os.getenv("VENICE_API_KEY")
+VENICE_API_URL = os.getenv("VENICE_API_URL")
 
 # Configuration variables with safe defaults
-VECTOR_DIMENSION = get_env_variable("VECTOR_DIMENSION")
-CHUNK_SIZE = get_env_variable("CHUNK_SIZE")
-CHUNK_OVERLAP = get_env_variable("CHUNK_OVERLAP")
-TOP_K_RESULTS = get_env_variable("TOP_K_RESULTS")
-INDEX_NAME = get_env_variable("INDEX_NAME")
-metric = get_env_variable("METRIC")
+VECTOR_DIMENSION = int(os.getenv("VECTOR_DIMENSION"))
+CHUNK_SIZE = int(os.getenv("CHUNK_SIZE"))
+CHUNK_OVERLAP = int(os.getenv("CHUNK_OVERLAP"))
+TOP_K_RESULTS = int(os.getenv("TOP_K_RESULTS"))
+INDEX_NAME = os.getenv("INDEX_NAME")
+metric = os.getenv("METRIC")
 dimensions = VECTOR_DIMENSION
 index_name = INDEX_NAME
+spec= ServerlessSpec('aws', 'us-east-1')
 
 # Initialize Pinecone
 def init_pinecone():
