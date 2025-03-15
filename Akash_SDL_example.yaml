@@ -1,0 +1,48 @@
+---
+version: "2.0"
+services:
+  service-1:
+    image: kylecohen01/veniceragtest:1.1
+    expose:
+      - port: 8080
+        as: 8080
+        to:
+          - global: true
+    env:
+      - HOST=0.0.0.0
+      - PORT=8080
+      - EMBEDDING_API_KEY=
+      - EMBEDDING_API_URL=https://api.venice.ai/api/v1/embeddings
+      - VENICE_API_KEY=
+      - VENICE_API_URL=https://api.venice.ai/api/v1/chat/completions
+      - PINECONE_API_KEY=
+      - VECTOR_DIMENSION=1024
+      - CHUNK_SIZE=256
+      - CHUNK_OVERLAP=50
+      - TOP_K_RESULTS=5
+      - METRIC=cosine
+      - INDEX_NAME=ragtest2
+profiles:
+  compute:
+    service-1:
+      resources:
+        cpu:
+          units:
+            - 2
+        memory:
+          size: 2gb #tuning of these values for optimization required
+        storage:
+          - size: 8Gi  #tuning of these values for optimization required
+  placement:
+    dcloud:
+      pricing:
+        service-1:
+          denom: uakt
+          amount: 1000000
+      attributes:
+        host: akash
+deployment:
+  service-1:
+    dcloud:
+      profile: service-1
+      count: 1

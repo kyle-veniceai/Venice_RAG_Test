@@ -31,6 +31,7 @@ var/
 .env
 venv/
 .venv/
+Akash_SDL_example.yaml
 
 # Uploads directory - don't include any pre-existing uploads
 uploads/*

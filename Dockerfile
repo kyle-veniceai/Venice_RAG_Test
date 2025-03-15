@@ -19,9 +19,11 @@ COPY . .
 
 # Create uploads directory
 RUN mkdir -p uploads
+RUN touch .env
+RUN printenv
 
 # Set port as an environment variable
 ENV PORT=8080
 
-# Run the application with gunicorn
-CMD exec gunicorn --bind 0.0.0.0:${PORT} --workers 1 --threads 8 --timeout 0 app:app
+# Run the application
+CMD python -m flask run --host=0.0.0.0 --port=${PORT}
