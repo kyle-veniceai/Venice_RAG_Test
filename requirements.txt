@@ -1,6 +1,6 @@
 Flask==2.3.3
-pandas==2.1.0
-pinecone==2.2.2
+pandas
+pinecone
 requests==2.31.0
 tqdm==4.66.1
 werkzeug==2.3.7
